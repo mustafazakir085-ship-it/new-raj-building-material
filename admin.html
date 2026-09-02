@@ -3,82 +3,172 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>New Raj Building Material - Admin</title>
 
 <style>
 body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:#f4f4f4;
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#f5f5f5;
 }
+
+.container{
+    max-width:600px;
+    margin:30px auto;
+    padding:20px;
+}
+
 .box{
-  max-width:500px;
-  margin:40px auto;
-  background:white;
-  padding:25px;
-  border-radius:15px;
-  box-shadow:0 3px 15px #ccc;
+    background:white;
+    padding:20px;
+    border-radius:15px;
+    box-shadow:0 3px 15px #ccc;
 }
-h1{text-align:center}
-input,button{
-  width:100%;
-  padding:13px;
-  margin:8px 0;
-  box-sizing:border-box;
-  border-radius:8px;
+
+h1,h2{
+    text-align:center;
 }
-input{border:1px solid #ccc}
+
+input,select,button{
+    width:100%;
+    padding:13px;
+    margin:8px 0;
+    box-sizing:border-box;
+    border-radius:8px;
+    font-size:15px;
+}
+
+input,select{
+    border:1px solid #ccc;
+}
+
 button{
-  border:0;
-  background:#111;
-  color:white;
-  font-size:16px;
+    border:0;
+    background:#111;
+    color:white;
+    cursor:pointer;
 }
-#panel{display:none}
-#message{font-weight:bold}
+
+#panel{
+    display:none;
+}
+
+.product{
+    border:1px solid #ddd;
+    padding:12px;
+    margin-top:10px;
+    border-radius:10px;
+}
+
+.product img{
+    width:100%;
+    max-height:180px;
+    object-fit:contain;
+}
+
+.delete{
+    background:#d00;
+}
+
+.edit{
+    background:#555;
+}
+
+#message{
+    font-weight:bold;
+}
 </style>
 </head>
 
 <body>
 
+<div class="container">
+
 <div class="box">
 
 <!-- LOGIN -->
+
 <div id="login">
+
 <h1>Admin Login</h1>
 
-<input id="email" type="email" placeholder="Admin Email">
+<input id="email"
+type="email"
+placeholder="Admin Email">
 
-<input id="password" type="password" placeholder="Password">
+<input id="password"
+type="password"
+placeholder="Password">
 
-<button id="loginBtn">Login</button>
+<button id="loginBtn">
+Login
+</button>
 
 <p id="loginMessage"></p>
+
 </div>
 
 
 <!-- ADMIN PANEL -->
+
 <div id="panel">
 
 <h1>New Raj Building Material</h1>
 
-<h2>Add Product</h2>
+<h2>Product Management</h2>
 
-<input id="name" placeholder="Product Name">
+<input id="name"
+placeholder="Product Name">
 
-<input id="price" type="number" placeholder="Price">
+<input id="price"
+type="number"
+placeholder="Price">
 
-<input id="category" placeholder="Category">
+<select id="category">
 
-<input id="imageUrl" placeholder="Image URL">
+<option value="">Select Category</option>
 
-<input id="stock" type="number" placeholder="Stock">
+<option value="Cement">
+Cement
+</option>
 
-<button id="addBtn">Add Product</button>
+<option value="Steel">
+Steel
+</option>
+
+<option value="Hardware">
+Hardware
+</option>
+
+</select>
+
+<input id="imageUrl"
+placeholder="Product Image URL">
+
+<input id="stock"
+type="number"
+placeholder="Stock">
+
+<button id="addBtn">
+Add Product
+</button>
 
 <p id="message"></p>
 
-<button id="logoutBtn">Logout</button>
+<hr>
+
+<h2>Products</h2>
+
+<div id="productList">
+Loading...
+</div>
+
+<button id="logoutBtn">
+Logout
+</button>
+
+</div>
 
 </div>
 
@@ -102,12 +192,15 @@ import {
 getFirestore,
 collection,
 addDoc,
+getDocs,
+deleteDoc,
+doc,
 serverTimestamp
 }
 from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 
-const firebaseConfig={
+const firebaseConfig = {
 
 apiKey:"AIzaSyBszu5iOeeCmYuxtdFRXQOekhqFbIok9OA",
 
@@ -124,20 +217,22 @@ appId:"1:683554895902:web:27751015cbea96508a160f"
 };
 
 
-const app=initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
 
-const auth=getAuth(app);
+const auth = getAuth(app);
 
-const db=getFirestore(app);
+const db = getFirestore(app);
 
 
 // LOGIN
 
-document.getElementById("loginBtn").onclick=async()=>{
+document.getElementById("loginBtn").onclick = async()=>{
 
-const email=document.getElementById("email").value;
+const email =
+document.getElementById("email").value;
 
-const password=document.getElementById("password").value;
+const password =
+document.getElementById("password").value;
 
 try{
 
@@ -149,7 +244,7 @@ password
 
 }catch(error){
 
-document.getElementById("loginMessage").innerText=
+document.getElementById("loginMessage").innerText =
 "Login failed. Email/password check karein.";
 
 }
@@ -167,6 +262,8 @@ document.getElementById("login").style.display="none";
 
 document.getElementById("panel").style.display="block";
 
+loadProducts();
+
 }else{
 
 document.getElementById("login").style.display="block";
@@ -180,22 +277,27 @@ document.getElementById("panel").style.display="none";
 
 // ADD PRODUCT
 
-document.getElementById("addBtn").onclick=async()=>{
+document.getElementById("addBtn").onclick = async()=>{
 
-const name=document.getElementById("name").value;
+const name =
+document.getElementById("name").value.trim();
 
-const price=Number(document.getElementById("price").value);
+const price =
+Number(document.getElementById("price").value);
 
-const category=document.getElementById("category").value;
+const category =
+document.getElementById("category").value;
 
-const imageUrl=document.getElementById("imageUrl").value;
+const imageUrl =
+document.getElementById("imageUrl").value.trim();
 
-const stock=Number(document.getElementById("stock").value);
+const stock =
+Number(document.getElementById("stock").value);
 
 
 if(!name || !price){
 
-document.getElementById("message").innerText=
+document.getElementById("message").innerText =
 "Product name aur price bharna zaroori hai.";
 
 return;
@@ -225,24 +327,119 @@ createdAt:serverTimestamp()
 );
 
 
-document.getElementById("message").innerText=
+document.getElementById("message").innerText =
 "✅ Product successfully added!";
 
+
 document.getElementById("name").value="";
+
 document.getElementById("price").value="";
+
 document.getElementById("category").value="";
+
 document.getElementById("imageUrl").value="";
+
 document.getElementById("stock").value="";
+
+
+loadProducts();
 
 
 }catch(error){
 
-document.getElementById("message").innerText=
+document.getElementById("message").innerText =
 "Error: "+error.message;
 
 }
 
 };
+
+
+// LOAD PRODUCTS
+
+async function loadProducts(){
+
+const list =
+document.getElementById("productList");
+
+list.innerHTML="Loading...";
+
+
+try{
+
+const snapshot =
+await getDocs(collection(db,"products"));
+
+list.innerHTML="";
+
+
+snapshot.forEach((item)=>{
+
+const data=item.data();
+
+const div=document.createElement("div");
+
+div.className="product";
+
+
+div.innerHTML=`
+
+${data.imageUrl ?
+`<img src="${data.imageUrl}">`
+:
+""}
+
+<h3>${data.name || ""}</h3>
+
+<p>Price: ₹${data.price || 0}</p>
+
+<p>Category: ${data.category || ""}</p>
+
+<p>Stock: ${data.stock || 0}</p>
+
+<button class="delete">
+Delete
+</button>
+
+`;
+
+
+div.querySelector(".delete").onclick =
+async()=>{
+
+if(confirm("Product delete karein?")){
+
+await deleteDoc(
+doc(db,"products",item.id)
+);
+
+loadProducts();
+
+}
+
+};
+
+
+list.appendChild(div);
+
+});
+
+
+if(snapshot.empty){
+
+list.innerHTML =
+"No products added yet.";
+
+}
+
+}catch(error){
+
+list.innerHTML =
+"Error: "+error.message;
+
+}
+
+}
 
 
 // LOGOUT
